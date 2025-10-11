@@ -181,6 +181,8 @@ const roomSchema = new Schema<RoomDocument>(
           'terrace',
           'garden',
           'playground',
+          'washingMachine',
+          'fireExtinguisher',
         ],
       },
     ],

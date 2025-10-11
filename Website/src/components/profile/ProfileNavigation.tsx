@@ -109,12 +109,6 @@ const ProfileNavigation = ({ userType = "student" }) => {
       description: "Personal information and bio"
     },
     {
-      label: "Business",
-      href: "/owner/profile/business",
-      icon: Briefcase,
-      description: "Business details and experience"
-    },
-    {
       label: "Verification",
       href: "/owner/profile/verification",
       icon: Shield,
