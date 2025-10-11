@@ -83,16 +83,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email verification required' }, { status: 400 });
     }
 
-    // Verify phone OTP - look for successfully verified OTP
-    const phoneOTP = await OTP.findOne({
-      identifier: phone,
-      type: 'phone',
-      isUsed: true
-    }).sort({ createdAt: -1 });
+    // Phone verification disabled - auto-verify phone
+    // const phoneOTP = await OTP.findOne({
+    //   identifier: phone,
+    //   type: 'phone',
+    //   isUsed: true
+    // }).sort({ createdAt: -1 });
 
-    if (!phoneOTP) {
-      return NextResponse.json({ error: 'Phone verification required' }, { status: 400 });
-    }
+    // if (!phoneOTP) {
+    //   return NextResponse.json({ error: 'Phone verification required' }, { status: 400 });
+    // }
 
     // Create new student (role and password hashing handled automatically)
     const student = new Student({

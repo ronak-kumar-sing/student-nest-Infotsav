@@ -90,22 +90,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify phone OTP - look for successfully verified OTP
-    const phoneOTP = await OTP.findOne({
-      identifier: userData.phone,
-      type: 'phone',
-      isUsed: true
-    }).sort({ createdAt: -1 }).exec()
+    // Phone verification disabled - auto-verify phone
+    // const phoneOTP = await OTP.findOne({
+    //   identifier: userData.phone,
+    //   type: 'phone',
+    //   isUsed: true
+    // }).sort({ createdAt: -1 }).exec()
 
-    if (!phoneOTP) {
-      return NextResponse.json(
-        {
-          error: 'Phone not verified',
-          message: 'Please verify your phone number first'
-        },
-        { status: 400 }
-      )
-    }
+    // if (!phoneOTP) {
+    //   return NextResponse.json(
+    //     {
+    //       error: 'Phone not verified',
+    //       message: 'Please verify your phone number first'
+    //     },
+    //     { status: 400 }
+    //   )
+    // }
 
     // Create new owner - discriminator automatically sets role
     const owner = new Owner({

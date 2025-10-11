@@ -218,6 +218,19 @@ export async function PUT(request: NextRequest) {
       delete updateData.lastName;
     }
 
+    // Handle preferences update - merge with existing preferences
+    if (updateData.preferences) {
+      // Merge preferences properly
+      user.preferences = {
+        ...user.preferences,
+        ...updateData.preferences
+      };
+      // Remove from updateData as we're handling it separately
+      delete updateData.preferences;
+      // Mark the nested field as modified
+      user.markModified('preferences');
+    }
+
     // Update the user
     Object.assign(user, updateData);
     await user.save();
