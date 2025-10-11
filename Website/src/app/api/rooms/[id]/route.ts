@@ -120,11 +120,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
 
       location: {
-        address: room.location?.address,
-        fullAddress: room.location?.fullAddress || `${room.location?.address}, ${room.location?.city}, ${room.location?.state} - ${room.location?.pincode}`,
-        city: room.location?.city,
-        state: room.location?.state,
-        pincode: room.location?.pincode,
+        address: room.location?.address || '',
+        fullAddress: room.location?.fullAddress || room.location?.address || 'Location not specified',
+        city: room.location?.city || 'Unknown',
+        state: room.location?.state || 'Unknown',
+        pincode: room.location?.pincode || '',
         coordinates: room.location?.coordinates || { lat: 28.6139, lng: 77.209 },
         nearbyUniversities: room.location?.nearbyUniversities || [],
         nearbyFacilities: room.location?.nearbyFacilities || [],

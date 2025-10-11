@@ -502,7 +502,7 @@ export default function OwnerPropertiesPage() {
                             <CardTitle className="line-clamp-1">{property.title}</CardTitle>
                             <CardDescription className="flex items-center gap-1 mt-1">
                               <MapPin className="h-3 w-3" />
-                              {property.location.city}, {property.location.state}
+                              {property.location?.city || 'Unknown'}, {property.location?.state || 'Unknown'}
                             </CardDescription>
                           </div>
                         </div>
@@ -596,7 +596,7 @@ export default function OwnerPropertiesPage() {
                             <h3 className="font-semibold text-lg line-clamp-1">{property.title}</h3>
                             <p className="text-sm text-muted-foreground flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
-                              {property.location.city}, {property.location.state}
+                              {property.location?.city || 'Unknown'}, {property.location?.state || 'Unknown'}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">

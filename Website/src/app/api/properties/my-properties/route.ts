@@ -66,7 +66,16 @@ export async function GET(request: NextRequest) {
       price: property.price,
       roomType: property.roomType,
       accommodationType: property.accommodationType,
-      location: property.location,
+      location: {
+        address: property.location?.address || '',
+        fullAddress: property.location?.fullAddress || property.location?.address || '',
+        city: property.location?.city || 'Unknown',
+        state: property.location?.state || 'Unknown',
+        pincode: property.location?.pincode || '',
+        coordinates: property.location?.coordinates || { lat: 0, lng: 0 },
+        nearbyUniversities: property.location?.nearbyUniversities || [],
+        nearbyFacilities: property.location?.nearbyFacilities || [],
+      },
       images: property.images || [],
       amenities: property.amenities || [],
       features: property.features || {},
@@ -93,6 +102,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: 'Failed to fetch properties',
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
       },
       { status: 500 }
     );
