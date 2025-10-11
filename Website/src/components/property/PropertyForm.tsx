@@ -150,7 +150,7 @@ export function PropertyForm() {
     securityDeposit: 0,
     maintenanceCharges: 0,
     features: {
-      area: 0,
+      area: 50,
       floor: 0,
       totalFloors: 0,
       furnished: false,
@@ -258,8 +258,12 @@ export function PropertyForm() {
         return true;
 
       case 4:
-        if (formData.features.area && formData.features.area <= 0) {
-          toast.error('Area must be greater than 0');
+        if (!formData.features.area || formData.features.area < 50) {
+          toast.error('Area must be at least 50 sq. ft.');
+          return false;
+        }
+        if (formData.features.area > 2000) {
+          toast.error('Area cannot exceed 2000 sq. ft.');
           return false;
         }
         return true;
@@ -574,8 +578,11 @@ export function PropertyForm() {
                   onLocationSelect={(location) => {
                     updateNestedData('location', {
                       coordinates: location.coordinates,
-                      address: location.address || formData.location.address,
-                      city: location.city || formData.location.city,
+                      address: location.address,
+                      fullAddress: location.fullAddress,
+                      city: location.city,
+                      state: location.state,
+                      pincode: location.pincode,
                     });
                   }}
                   initialLocation={formData.location.coordinates}
@@ -688,18 +695,20 @@ export function PropertyForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="area">Area (sq. ft.)</Label>
+                <Label htmlFor="area">Area (sq. ft.) *</Label>
                 <Input
                   id="area"
                   type="number"
-                  placeholder="e.g., 400"
+                  placeholder="e.g., 400 (minimum 50 sq. ft.)"
                   value={formData.features.area || ''}
                   onChange={(e) => updateNestedData('features', {
                     area: parseFloat(e.target.value) || 0
                   })}
-                  min="0"
+                  min="50"
+                  max="2000"
                   className="mt-2"
                 />
+                <p className="text-xs text-gray-500 mt-1">Minimum 50 sq. ft. required</p>
               </div>
 
               <div>

@@ -6,7 +6,7 @@ import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
-import { Loader2, MapPin, Navigation, Search } from 'lucide-react';
+import { Loader2, MapPin, Navigation, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMapEvents } from 'react-leaflet';
 import type { LeafletMouseEvent } from 'leaflet';
@@ -48,7 +48,10 @@ const defaultCenter: [number, number] = [28.6139, 77.2090]; // Delhi
 interface LocationSelectorProps {
   onLocationSelect: (location: {
     address: string;
+    fullAddress: string;
     city: string;
+    state: string;
+    pincode: string;
     coordinates: { lat: number; lng: number };
   }) => void;
   initialLocation?: {
@@ -114,10 +117,48 @@ export function LeafletLocationSelector({
   const [address, setAddress] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Fetch search suggestions as user types
+  const fetchSuggestions = async (query: string) => {
+    if (!query.trim() || query.length < 3) {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+        {
+          headers: {
+            'Accept-Language': 'en',
+          },
+        }
+      );
+      const data = await response.json();
+      setSearchSuggestions(data);
+      setShowSuggestions(data.length > 0);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+    }
+  };
+
+  // Debounce search suggestions
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchValue) {
+        fetchSuggestions(searchValue);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchValue]);
 
   const getAddressFromCoordinates = async (position: [number, number]) => {
     try {
@@ -133,14 +174,40 @@ export function LeafletLocationSelector({
 
       if (response.ok) {
         const data = await response.json();
-        const addr = data.display_name || 'Unknown location';
-        const city = data.address?.city || data.address?.town || data.address?.village || data.address?.state || '';
+        const displayName = data.display_name || 'Unknown location';
 
-        setAddress(addr);
+        // Extract detailed address components from Nominatim response
+        const addressData = data.address || {};
+
+        // Build street address from road, house_number, neighbourhood
+        const streetParts = [
+          addressData.house_number,
+          addressData.road || addressData.street,
+          addressData.neighbourhood || addressData.suburb
+        ].filter(Boolean);
+        const streetAddress = streetParts.join(', ') || displayName;
+
+        // Get city (can be city, town, village, or municipality)
+        const city = addressData.city ||
+          addressData.town ||
+          addressData.village ||
+          addressData.municipality ||
+          addressData.county || '';
+
+        // Get state
+        const state = addressData.state || addressData.region || '';
+
+        // Get pincode/postcode
+        const pincode = addressData.postcode || '';
+
+        setAddress(displayName);
 
         onLocationSelect({
-          address: addr,
+          address: streetAddress,
+          fullAddress: displayName,
           city: city,
+          state: state,
+          pincode: pincode,
           coordinates: { lat: position[0], lng: position[1] },
         });
       } else {
@@ -152,37 +219,51 @@ export function LeafletLocationSelector({
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchValue) return;
+  const handleSearch = async (selectedSuggestion?: any) => {
+    const queryToSearch = selectedSuggestion || searchValue;
+
+    if (!queryToSearch || (typeof queryToSearch === 'string' && !queryToSearch.trim())) {
+      toast.error('Please enter a location to search');
+      return;
+    }
 
     setIsSearching(true);
-    try {
-      // Using Nominatim (OpenStreetMap) geocoding
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchValue)}&limit=1`,
-        {
-          headers: {
-            'Accept-Language': 'en',
-          },
-        }
-      );
+    setShowSuggestions(false);
 
-      if (response.ok) {
+    try {
+      let lat, lon;
+
+      if (selectedSuggestion && selectedSuggestion.lat && selectedSuggestion.lon) {
+        // Use selected suggestion
+        lat = selectedSuggestion.lat;
+        lon = selectedSuggestion.lon;
+        setSearchValue(selectedSuggestion.display_name);
+      } else {
+        // Search by query
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryToSearch)}&limit=1`,
+          {
+            headers: {
+              'Accept-Language': 'en',
+            },
+          }
+        );
         const data = await response.json();
+
         if (data && data.length > 0) {
-          const position: [number, number] = [
-            parseFloat(data[0].lat),
-            parseFloat(data[0].lon),
-          ];
-          setSelectedPosition(position);
-          getAddressFromCoordinates(position);
-          toast.success('Location found');
+          lat = data[0].lat;
+          lon = data[0].lon;
         } else {
           toast.error('Location not found. Try a different search term.');
+          setIsSearching(false);
+          return;
         }
-      } else {
-        toast.error('Location not found');
       }
+
+      const position: [number, number] = [parseFloat(lat), parseFloat(lon)];
+      setSelectedPosition(position);
+      getAddressFromCoordinates(position);
+      toast.success('Location found');
     } catch (error) {
       console.error('Error searching location:', error);
       toast.error('Failed to search location');
@@ -231,17 +312,55 @@ export function LeafletLocationSelector({
       {/* Search Bar */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
           <Input
             placeholder="Search for a location..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            className="pl-10"
+            onFocus={() => searchSuggestions.length > 0 && setShowSuggestions(true)}
+            className="pl-10 pr-10"
             disabled={isSearching}
           />
+          {searchValue && (
+            <button
+              onClick={() => {
+                setSearchValue('');
+                setSearchSuggestions([]);
+                setShowSuggestions(false);
+              }}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Search Suggestions Dropdown */}
+          {showSuggestions && searchSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border rounded-md shadow-lg max-h-60 overflow-y-auto z-50">
+              {searchSuggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSearch(suggestion)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 border-b last:border-b-0 transition-colors"
+                >
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {suggestion.display_name.split(',')[0]}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                        {suggestion.display_name}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <Button onClick={handleSearch} variant="secondary" disabled={isSearching}>
+        <Button onClick={() => handleSearch()} variant="secondary" disabled={isSearching || !searchValue.trim()}>
           {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
         </Button>
         <Button onClick={getCurrentLocation} variant="outline">

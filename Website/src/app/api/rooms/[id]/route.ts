@@ -2,7 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '../../../../lib/db/connection';
 import Room from '../../../../lib/models/Room';
 import Review from '../../../../lib/models/Review';
+import { verifyAccessToken } from '../../../../lib/utils/jwt';
 import mongoose from 'mongoose';
+
+// Helper function to verify JWT token
+async function verifyToken(request: NextRequest) {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('No token provided');
+  }
+
+  const token = authHeader.substring(7);
+  const decoded = await verifyAccessToken(token);
+
+  if (!decoded || !decoded.userId) {
+    throw new Error('Invalid token');
+  }
+
+  return decoded;
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -143,6 +161,145 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         success: false,
         error: 'Failed to fetch room details',
       },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/rooms/[id] - Update room (owner only)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Verify authentication
+    const decoded = await verifyToken(request);
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid room ID' },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    const room = await Room.findById(id);
+    if (!room) {
+      return NextResponse.json(
+        { success: false, error: 'Property not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check ownership
+    if (room.owner.toString() !== decoded.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - You can only edit your own properties' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+
+    // Update the room
+    const updatedRoom = await Room.findByIdAndUpdate(
+      id,
+      { ...body, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    ).populate('owner', 'fullName email phoneNumber');
+
+    return NextResponse.json({
+      success: true,
+      message: 'Property updated successfully',
+      data: updatedRoom,
+    });
+  } catch (error: any) {
+    console.error('Error updating room:', error);
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const details = Object.values(error.errors).map((err: any) => err.message);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error.message === 'Invalid token' || error.message === 'No token provided') {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, error: error.message || 'Failed to update property' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/rooms/[id] - Delete room (owner only)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Verify authentication
+    const decoded = await verifyToken(request);
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid room ID' },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    const room = await Room.findById(id);
+    if (!room) {
+      return NextResponse.json(
+        { success: false, error: 'Property not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check ownership
+    if (room.owner.toString() !== decoded.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - You can only delete your own properties' },
+        { status: 403 }
+      );
+    }
+
+    await Room.findByIdAndDelete(id);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Property deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Error deleting room:', error);
+
+    if (error.message === 'Invalid token' || error.message === 'No token provided') {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, error: error.message || 'Failed to delete property' },
       { status: 500 }
     );
   }
