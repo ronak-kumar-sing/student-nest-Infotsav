@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
 import ModernHeroSection from '@/components/landing/ModernHeroSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import { Button } from '@/components/ui/button';
+import { config } from '@/src/config';
 
 export default function LandingScreen() {
   return (
@@ -14,40 +15,29 @@ export default function LandingScreen() {
 
       {/* Role Selection */}
       <View style={styles.roleSelectionContainer}>
-        <Button 
-          style={styles.roleButton}
-          onPress={() => {
-            // @ts-ignore - Type checking for href is too strict
-            Link.push('/register?role=student');
-          }}
-        >
-          I'm a Student Looking for Accommodation
-        </Button>
+        <Link href="/(auth)/student/signup" asChild>
+          <Button style={styles.roleButton}>
+            I'm a Student Looking for Accommodation
+          </Button>
+        </Link>
 
-        <Button 
-          style={{ ...styles.roleButton, backgroundColor: '#3b82f6' }}
-          onPress={() => {
-            // @ts-ignore - Type checking for href is too strict
-            Link.push('/register?role=owner');
-          }}
-        >
-          I'm a Property Owner
-        </Button>
+        <Link href="/(auth)/owner/signup" asChild>
+          <Button style={{ ...styles.roleButton, backgroundColor: '#3b82f6' }}>
+            I'm a Property Owner
+          </Button>
+        </Link>
 
-        <Button 
-          style={{
-            ...styles.roleButton,
-            backgroundColor: 'transparent',
-            borderWidth: 1,
-            borderColor: '#2a2a2b'
-          }}
-          onPress={() => {
-            // @ts-ignore - Type checking for href is too strict
-            Link.push('/login');
-          }}
-        >
-          Already have an account? Log in
-        </Button>
+        <Link href="/(auth)/student/login" asChild>
+          <Button 
+            style={{
+              ...styles.roleButton,
+              backgroundColor: 'transparent',
+              borderWidth: 1,
+              borderColor: '#2a2a2b'
+            }}>
+            Already have an account? Log in
+          </Button>
+        </Link>
       </View>
 
       {/* Features Section */}

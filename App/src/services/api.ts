@@ -11,7 +11,11 @@ import {
   Application 
 } from '@/types/roomSharing';
 
-const API_BASE_URL = 'https://student-nest-for.vercel.app/api';
+import { config } from '@/src/config';
+
+const API_BASE_URL = config.apiBaseUrl;
+const MAX_LOGIN_ATTEMPTS = config.auth.maxLoginAttempts;
+const LOCK_TIME_HOURS = config.auth.lockTimeHours;
 
 interface APIResponse<T = any> {
   success: boolean;
@@ -50,17 +54,57 @@ class APIClient {
     
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     };
 
     try {
+      console.log(`Making request to ${this.baseURL}${endpoint}`, {
+        method: options.method || 'GET',
+        headers,
+      });
+
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
         headers,
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        // Log full request details for debugging
+        console.log('Full request details:', {
+          url: `${this.baseURL}${endpoint}`,
+          method: options.method,
+          headers,
+          body: options.body
+        });
+
+        const text = await response.text();
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('Raw response text:', text);
+        
+        if (!text) {
+          throw new Error('Empty response from server');
+        }
+
+        try {
+          data = JSON.parse(text);
+          console.log('Parsed response data:', data);
+        } catch (e) {
+          console.error('Failed to parse response as JSON:', text);
+          throw new Error(`Invalid JSON response: ${text}`);
+        }
+      } catch (error) {
+        console.error('Error processing response:', error);
+        throw error instanceof Error ? error : new Error('Unknown error occurred');
+      }
+
+      console.log(`Response from ${endpoint}:`, {
+        status: response.status,
+        data,
+      });
 
       // Handle 401 - Token expired, try to refresh
       if (response.status === 401 && endpoint !== '/auth/refresh') {
@@ -72,14 +116,10 @@ class APIClient {
       }
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || 'Request failed');
+        throw new Error(data.error || data.message || `Request failed with status ${response.status}`);
       }
 
-      return {
-        success: true,
-        data: data.data || data,
-        message: data.message,
-      };
+      return data;
     } catch (error: any) {
       console.error('API Request Error:', error);
       return {

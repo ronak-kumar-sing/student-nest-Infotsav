@@ -55,76 +55,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (email: string, password: string) => {
     try {
       set({ isLoading: true });
-
+      
+      // Input validation
       if (!email || !password) {
         throw new Error('Email and password are required');
       }
-      
-      // Prepare payload according to API validation schema
-      const payload = {
-        identifier: email, // API expects 'identifier' instead of 'email'
-        password,
-        role: 'student' // Explicitly specify role
-      };
 
-      console.log('Login attempt with:', { identifier: email, role: 'student' });
+      console.log('Attempting login...');
+      
+      // Use the main login endpoint with type specified
+      const payload = {
+        email,
+        password,
+        type: 'student', // Specify user type
+        deviceToken: 'mobile-app'
+      };
+      
+      console.log('Login payload:', {
+        ...payload,
+        password: '***' // Hide password in logs
+      });
 
       const response = await api.request('/auth/login', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
 
-      console.log('Response from /auth/login:', JSON.stringify(response));
-
-      if (!response?.data) {
-        throw new Error('Invalid response format from server');
-      }
-
-      const { accessToken, user } = response.data;
-
-      if (!accessToken || !user) {
-        throw new Error('Missing token or user data in response');
-      }
-
-      // Ensure we have the required user fields
-      const userData: User = {
-        id: user.id || user._id, // Handle both id formats
-        name: user.name,
-        email: user.email,
-        role: user.role || 'student', // Default to student if role is missing
-        profileImage: user.profileImage
-      };
-
-      await Promise.all([
-        secureStorage.setAuthToken(accessToken),
-        secureStorage.setUserData(userData),
-      ]);
-
-      set({ isAuthenticated: true, token: accessToken, user: userData, isLoading: false });
-    } catch (error: any) {
-      set({ isLoading: false });
-      throw error instanceof Error ? error : new Error(error?.message || 'Login failed. Please try again.');
-    }
-  },
-
-  register: async (data) => {
-    try {
-      set({ isLoading: true });
-      
-      const endpoint = data.role === 'student' 
-        ? '/auth/student/signup'
-        : '/auth/owner/signup';
-
-      const response = await api.request(endpoint, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-
       if (!response.success) {
-        throw new Error(response.error || 'Registration failed');
+        throw new Error(response.error || 'Login failed. Please check your credentials.');
       }
 
-      const { accessToken: token, user } = response.data;
+      const { token, user } = response.data;
 
       if (!token || !user) {
         throw new Error('Invalid response from server');
@@ -138,7 +99,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isAuthenticated: true, token, user, isLoading: false });
     } catch (error: any) {
       set({ isLoading: false });
-      throw error instanceof Error ? error : new Error(error?.message || 'Registration failed. Please try again.');
+      // Add more descriptive error
+      throw new Error(error.message || 'Login failed. Please try again.');
+    }
+  },
+
+  register: async (data) => {
+    try {
+      set({ isLoading: true });
+      const response = await api.request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+
+      const { token, user } = response.data;
+
+      await Promise.all([
+        secureStorage.setAuthToken(token),
+        secureStorage.setUserData(user),
+      ]);
+
+      set({ isAuthenticated: true, token, user, isLoading: false });
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
     }
   },
 
@@ -168,15 +156,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
 
       if (!response.success) {
-        throw new Error(response.error || 'Failed to update profile');
+        throw new Error(response.error);
       }
 
       const updatedUser = { ...get().user, ...response.data.user };
       await secureStorage.setUserData(updatedUser);
       set({ user: updatedUser, isLoading: false });
-    } catch (error: any) {
+    } catch (error) {
       set({ isLoading: false });
-      throw error instanceof Error ? error : new Error(error?.message || 'Failed to update profile');
+      throw error;
     }
   },
 }));

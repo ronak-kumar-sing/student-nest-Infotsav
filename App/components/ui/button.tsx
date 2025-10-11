@@ -1,17 +1,31 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
 
 interface ButtonProps {
   children: React.ReactNode;
   style?: ViewStyle;
   textStyle?: TextStyle;
   onPress: () => void;
+  loading?: boolean;
+  disabled?: boolean;
 }
 
-export function Button({ children, style, textStyle, onPress }: ButtonProps) {
+export function Button({ children, style, textStyle, onPress, loading, disabled }: ButtonProps) {
   return (
-    <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
-      <Text style={[styles.text, textStyle]}>{children}</Text>
+    <TouchableOpacity 
+      style={[
+        styles.button, 
+        style,
+        (loading || disabled) && styles.buttonDisabled
+      ]} 
+      onPress={onPress}
+      disabled={loading || disabled}
+    >
+      {loading ? (
+        <ActivityIndicator color="#FFFFFF" />
+      ) : (
+        <Text style={[styles.text, textStyle]}>{children}</Text>
+      )}
     </TouchableOpacity>
   );
 }
@@ -24,6 +38,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   text: {
     color: '#FFFFFF',

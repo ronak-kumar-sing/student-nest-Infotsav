@@ -1,13 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { Link } from 'expo-router';
+import { DemoCredentials } from '@/components/auth/demo-credentials';
+import { useAuthStore } from '@/src/store/auth.store';
 
 export default function OwnerLoginScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const login = useAuthStore((state) => state.login);
+
+  const handleLogin = async () => {
+    try {
+      setIsLoading(true);
+      await login(email, password);
+    } catch (error) {
+      // TODO: Show error toast
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDemoCredentials = (credentials: { email: string; password: string }) => {
+    setEmail(credentials.email);
+    setPassword(credentials.password);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome Back Owner!</Text>
       <Text style={styles.subtitle}>Login to manage your properties</Text>
+
+      <DemoCredentials type="owner" onUseCredentials={handleDemoCredentials} />
 
       <View style={styles.form}>
         <View style={styles.inputGroup}>
@@ -18,6 +44,8 @@ export default function OwnerLoginScreen() {
             placeholderTextColor="#6b7280"
             keyboardType="email-address"
             autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
 
@@ -28,15 +56,16 @@ export default function OwnerLoginScreen() {
             placeholder="Enter your password"
             placeholderTextColor="#6b7280"
             secureTextEntry
+            value={password}
+            onChangeText={setPassword}
           />
         </View>
 
         <Button
           style={styles.button}
           textStyle={styles.buttonText}
-          onPress={() => {
-            // Handle login
-          }}>
+          onPress={handleLogin}
+          loading={isLoading}>
           Login
         </Button>
 
