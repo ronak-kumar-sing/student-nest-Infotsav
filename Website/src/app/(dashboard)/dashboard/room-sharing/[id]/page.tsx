@@ -157,6 +157,15 @@ export default function RoomSharingDetailsPage() {
             {share.status}
           </Badge>
           {share.isFull && <Badge variant="destructive">Full</Badge>}
+          {property?._id && (
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/dashboard/rooms/${property._id}`)}
+            >
+              <Home className="h-4 w-4 mr-2" />
+              View Room Details
+            </Button>
+          )}
         </div>
       </div>
 

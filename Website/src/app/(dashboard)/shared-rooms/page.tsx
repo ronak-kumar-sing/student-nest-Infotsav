@@ -15,8 +15,10 @@ import {
   Loader2,
   UserPlus,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  User
 } from "lucide-react";
+import Image from 'next/image';
 import apiClient from '../../../lib/api';
 import { toast } from 'sonner';
 
@@ -32,6 +34,7 @@ interface RoomSharingRequest {
   requestedBy: string;
   requestedByEmail: string;
   requestedByPhone: string;
+  requestedByPhoto?: string;
   preferences: {
     budget?: string;
     lifestyle?: string;
@@ -71,6 +74,7 @@ export default function SharedRoomsPage() {
           requestedBy: share.initiator?.fullName || share.initiator?.name || share.student?.fullName || 'Student',
           requestedByEmail: share.initiator?.email || share.student?.email || 'N/A',
           requestedByPhone: share.initiator?.phone || share.student?.phone || 'N/A',
+          requestedByPhoto: share.initiator?.profilePhoto || share.student?.profilePhoto,
           preferences: {
             budget: share.costSharing?.rentPerPerson ? `₹${share.costSharing.rentPerPerson}/person` : 'Not specified',
             lifestyle: share.requirements?.lifestyle?.join(', ') || 'Not specified',
@@ -237,17 +241,33 @@ export default function SharedRoomsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <UserPlus className="h-4 w-4 text-muted-foreground" />
-                      <span>{request.requestedBy}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{request.requestedByEmail}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{request.requestedByPhone}</span>
+                    <div className="flex items-start gap-3">
+                      {request.requestedByPhoto ? (
+                        <Image
+                          src={request.requestedByPhoto}
+                          alt={request.requestedBy}
+                          width={48}
+                          height={48}
+                          className="rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <User className="h-6 w-6 text-primary" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          {request.requestedBy}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                          <Mail className="h-3 w-3" />
+                          <span className="text-xs">{request.requestedByEmail}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Phone className="h-3 w-3" />
+                          <span className="text-xs">{request.requestedByPhone}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-2">

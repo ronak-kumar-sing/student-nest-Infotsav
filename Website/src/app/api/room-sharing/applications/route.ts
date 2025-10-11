@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
           path: 'roomSharing',
           populate: {
             path: 'initiator',
-            select: 'fullName email phone'
+            select: 'fullName email phone profilePhoto'
           }
         })
         .sort({ createdAt: -1 });
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
             select: 'title location images roomType'
           }
         })
-        .populate('applicant', 'fullName email phone collegeId course yearOfStudy')
+        .populate('applicant', 'fullName email phone profilePhoto collegeId course yearOfStudy')
         .sort({ createdAt: -1 });
 
       applications.push(...receivedApplications.map((app: any) => ({

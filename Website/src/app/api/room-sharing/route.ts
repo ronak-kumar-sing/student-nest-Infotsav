@@ -171,8 +171,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate and set defaults for maxParticipants
-    const validatedMaxParticipants = maxParticipants && maxParticipants >= 2 
-      ? Math.min(maxParticipants, 6) 
+    const validatedMaxParticipants = maxParticipants && maxParticipants >= 2
+      ? Math.min(maxParticipants, 6)
       : 2;
 
     // Validate and set defaults for roomConfiguration

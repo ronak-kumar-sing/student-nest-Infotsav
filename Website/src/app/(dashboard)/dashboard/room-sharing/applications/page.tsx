@@ -21,9 +21,11 @@ import {
   MessageCircle,
   Eye,
   Trash2,
-  Loader2
+  Loader2,
+  User
 } from 'lucide-react';
 import { toast } from 'sonner';
+import Image from 'next/image';
 import apiClient from '../../../../../lib/api';
 
 interface Application {
@@ -40,6 +42,7 @@ interface Application {
     fullName: string;
     email: string;
     phone?: string;
+    profilePhoto?: string;
     collegeId?: string;
     course?: string;
     yearOfStudy?: number;
@@ -370,15 +373,49 @@ export default function RoomSharingApplicationsPage() {
                                 <span>Applied {new Date(application.createdAt).toLocaleDateString()}</span>
                               </div>
                               {application.type === 'received' && (
-                                <div>
-                                  <strong>Applicant:</strong> {application.counterparty.fullName}
-                                  <br />
-                                  <span className="text-xs">{application.counterparty.collegeId} • {application.counterparty.course}</span>
+                                <div className="flex items-start gap-3">
+                                  {application.counterparty.profilePhoto ? (
+                                    <Image
+                                      src={application.counterparty.profilePhoto}
+                                      alt={application.counterparty.fullName}
+                                      width={48}
+                                      height={48}
+                                      className="rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                      <User className="h-6 w-6 text-primary" />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <strong>Applicant:</strong> {application.counterparty.fullName}
+                                    <br />
+                                    <span className="text-xs">{application.counterparty.collegeId} • {application.counterparty.course}</span>
+                                    <br />
+                                    <span className="text-xs text-muted-foreground">{application.counterparty.email}</span>
+                                  </div>
                                 </div>
                               )}
                               {application.type === 'sent' && (
-                                <div>
-                                  <strong>Property Owner:</strong> {application.counterparty.fullName}
+                                <div className="flex items-start gap-3">
+                                  {application.counterparty.profilePhoto ? (
+                                    <Image
+                                      src={application.counterparty.profilePhoto}
+                                      alt={application.counterparty.fullName}
+                                      width={48}
+                                      height={48}
+                                      className="rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                      <User className="h-6 w-6 text-primary" />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <strong>Property Owner:</strong> {application.counterparty.fullName}
+                                    <br />
+                                    <span className="text-xs text-muted-foreground">{application.counterparty.email}</span>
+                                  </div>
                                 </div>
                               )}
                             </div>

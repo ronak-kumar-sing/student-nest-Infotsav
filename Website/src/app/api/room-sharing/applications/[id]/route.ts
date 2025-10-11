@@ -159,16 +159,41 @@ export async function PATCH(
       application.reviewedAt = new Date();
       application.reviewedBy = userId;
 
-      // If accepting, decrease available beds in room sharing
+      // If accepting, add participant and update room sharing
       const roomSharing = await RoomSharing.findById((application.roomSharing as any)._id);
-      if (roomSharing && (roomSharing as any).bedsAvailable > 0) {
-        (roomSharing as any).bedsAvailable -= 1;
+      if (roomSharing) {
+        // Add the applicant to currentParticipants
+        const applicantId = typeof application.applicant === 'object'
+          ? (application.applicant as any)._id
+          : application.applicant;
 
-        // If no more beds available, mark room sharing as complete
-        if ((roomSharing as any).bedsAvailable === 0) {
+        (roomSharing as any).currentParticipants.push({
+          user: applicantId,
+          status: 'confirmed',
+          joinedAt: new Date()
+        });
+
+        // Decrease available beds
+        if ((roomSharing as any).bedsAvailable > 0) {
+          (roomSharing as any).bedsAvailable -= 1;
+        }
+
+        // Check if room sharing is now full
+        const confirmedParticipants = (roomSharing as any).currentParticipants.filter(
+          (p: any) => p.status === 'confirmed'
+        ).length;
+
+        // If all slots are filled (initiator + participants = maxParticipants)
+        // Or if no beds are available, mark as completed and archive
+        if (confirmedParticipants >= (roomSharing as any).maxParticipants - 1 ||
+            (roomSharing as any).bedsAvailable === 0) {
           (roomSharing as any).status = 'completed';
-          (roomSharing as any).completionReason = 'All beds filled';
+          (roomSharing as any).completionReason = 'All slots filled';
           (roomSharing as any).completedAt = new Date();
+
+          // Optionally, you can delete it instead of just marking as completed
+          // await RoomSharing.findByIdAndDelete((application.roomSharing as any)._id);
+          // For now, we'll keep it as 'completed' for record-keeping
         }
 
         await roomSharing.save();
