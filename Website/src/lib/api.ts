@@ -2,7 +2,7 @@
 import type { ApiResponse, User } from '../types';
 
 const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://your-domain.com'
+  ? 'https://student-nest-infotsav.vercel.app'
   : 'http://localhost:3000';
 
 class ApiClient {
