@@ -27,7 +27,26 @@ const studentProfileSchema = z.object({
   avatar: z.string().url().optional(),
   profilePhoto: z.string().url().optional(),
   dateOfBirth: z.string().optional(),
-  gender: z.enum(['male', 'female', 'other']).optional()
+  gender: z.enum(['male', 'female', 'other']).optional(),
+  // Student preferences
+  preferences: z.object({
+    budgetMin: z.number().optional(),
+    budgetMax: z.number().optional(),
+    preferredLocations: z.array(z.string()).optional(),
+    roomType: z.string().optional(),
+    occupancyType: z.string().optional(),
+    amenities: z.array(z.string()).optional(),
+    petFriendly: z.boolean().optional(),
+    smokingAllowed: z.boolean().optional(),
+    couplesAllowed: z.boolean().optional(),
+    vegetarianOnly: z.boolean().optional(),
+    roomTypePreference: z.array(z.string()).optional(),
+    locationPreferences: z.array(z.string()).optional(),
+    amenityPreferences: z.array(z.string()).optional(),
+  }).optional(),
+  // Notification and privacy settings
+  notificationSettings: z.any().optional(),
+  privacySettings: z.any().optional(),
 });
 
 // Helper function to verify JWT token and get user
