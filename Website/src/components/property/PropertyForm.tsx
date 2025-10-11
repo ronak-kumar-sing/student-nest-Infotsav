@@ -589,6 +589,193 @@ export function PropertyForm() {
                   height="450px"
                 />
               </div>
+
+              {/* Nearby Universities Section */}
+              <div className="mt-6 border-t pt-6">
+                <h4 className="text-base font-semibold mb-4">
+                  🎓 Nearby Universities (Optional)
+                </h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Add nearby universities to attract students. This helps in search visibility.
+                </p>
+
+                {/* Add University Form */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                  <Input
+                    placeholder="University name"
+                    id="university-name-input"
+                  />
+                  <Input
+                    placeholder="Distance (km)"
+                    type="number"
+                    step="0.1"
+                    id="university-distance-input"
+                  />
+                  <Input
+                    placeholder="Travel time (e.g., 15 mins)"
+                    id="university-commute-input"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const nameInput = document.getElementById('university-name-input') as HTMLInputElement;
+                    const distanceInput = document.getElementById('university-distance-input') as HTMLInputElement;
+                    const commuteInput = document.getElementById('university-commute-input') as HTMLInputElement;
+
+                    if (nameInput?.value && distanceInput?.value) {
+                      const newUniversity = {
+                        name: nameInput.value,
+                        distance: distanceInput.value,
+                        commute: commuteInput?.value || '',
+                      };
+
+                      updateNestedData('location', {
+                        nearbyUniversities: [...formData.location.nearbyUniversities, newUniversity]
+                      });
+
+                      // Clear inputs
+                      nameInput.value = '';
+                      distanceInput.value = '';
+                      if (commuteInput) commuteInput.value = '';
+                    } else {
+                      toast.error('Please enter university name and distance');
+                    }
+                  }}
+                >
+                  + Add University
+                </Button>
+
+                {/* List of added universities */}
+                <div className="mt-4 space-y-2">
+                  {formData.location.nearbyUniversities.map((uni, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{uni.name}</p>
+                        <p className="text-sm text-gray-600">
+                          {uni.distance}km away{uni.commute && ` • ${uni.commute}`}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const updated = formData.location.nearbyUniversities.filter((_, i) => i !== index);
+                          updateNestedData('location', { nearbyUniversities: updated });
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  {formData.location.nearbyUniversities.length === 0 && (
+                    <p className="text-sm text-gray-500 italic">No universities added yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Nearby Facilities Section */}
+              <div className="mt-6 border-t pt-6">
+                <h4 className="text-base font-semibold mb-4">
+                  🏪 Nearby Facilities (Optional)
+                </h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Add nearby amenities like hospitals, metro stations, markets, etc.
+                </p>
+
+                {/* Add Facility Form */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    id="facility-type-input"
+                  >
+                    <option value="">Select type</option>
+                    <option value="hospital">🏥 Hospital</option>
+                    <option value="metro">🚇 Metro Station</option>
+                    <option value="bus">🚌 Bus Stop</option>
+                    <option value="market">🛒 Market/Mall</option>
+                    <option value="restaurant">🍽️ Restaurant</option>
+                    <option value="gym">🏋️ Gym</option>
+                    <option value="bank">🏦 Bank/ATM</option>
+                    <option value="pharmacy">💊 Pharmacy</option>
+                    <option value="park">🌳 Park</option>
+                    <option value="other">📍 Other</option>
+                  </select>
+                  <Input
+                    placeholder="Facility name"
+                    id="facility-name-input"
+                  />
+                  <Input
+                    placeholder="Distance (km)"
+                    type="number"
+                    step="0.1"
+                    id="facility-distance-input"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const typeInput = document.getElementById('facility-type-input') as HTMLSelectElement;
+                    const nameInput = document.getElementById('facility-name-input') as HTMLInputElement;
+                    const distanceInput = document.getElementById('facility-distance-input') as HTMLInputElement;
+
+                    if (typeInput?.value && nameInput?.value && distanceInput?.value) {
+                      const newFacility = {
+                        type: typeInput.value,
+                        name: nameInput.value,
+                        distance: parseFloat(distanceInput.value),
+                      };
+
+                      const currentFacilities = formData.location.nearbyFacilities || [];
+                      updateNestedData('location', {
+                        nearbyFacilities: [...currentFacilities, newFacility]
+                      });
+
+                      // Clear inputs
+                      typeInput.value = '';
+                      nameInput.value = '';
+                      distanceInput.value = '';
+                    } else {
+                      toast.error('Please fill all facility fields');
+                    }
+                  }}
+                >
+                  + Add Facility
+                </Button>
+
+                {/* List of added facilities */}
+                <div className="mt-4 space-y-2">
+                  {(formData.location.nearbyFacilities || []).map((facility: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{facility.name}</p>
+                        <p className="text-sm text-gray-600">
+                          {facility.type} • {facility.distance}km away
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const updated = (formData.location.nearbyFacilities || []).filter((_: any, i: number) => i !== index);
+                          updateNestedData('location', { nearbyFacilities: updated });
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  {(!formData.location.nearbyFacilities || formData.location.nearbyFacilities.length === 0) && (
+                    <p className="text-sm text-gray-500 italic">No facilities added yet</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         );

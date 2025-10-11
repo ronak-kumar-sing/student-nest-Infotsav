@@ -71,7 +71,7 @@ const bookingSchema = new Schema<BookingDocument>(
 
     paymentStatus: {
       type: String,
-      enum: ['pending', 'partial', 'paid', 'refunded', 'failed'],
+      enum: ['pending', 'partial', 'paid', 'completed', 'refunded', 'failed', 'pending_confirmation'],
       default: 'pending',
     },
     paymentDetails: {
@@ -93,10 +93,50 @@ const bookingSchema = new Schema<BookingDocument>(
       },
       paymentMethod: {
         type: String,
-        enum: ['online', 'cash', 'bank_transfer', 'upi'],
+        enum: ['online', 'cash', 'bank_transfer', 'upi', 'offline'],
       },
       transactionId: String,
       paymentDate: Date,
+    },
+
+    // Offline payment confirmation (dual-confirmation system)
+    offlinePaymentStatus: {
+      studentConfirmed: {
+        type: Boolean,
+        default: false,
+      },
+      studentConfirmedAt: Date,
+      ownerConfirmed: {
+        type: Boolean,
+        default: false,
+      },
+      ownerConfirmedAt: Date,
+      paymentMethod: {
+        type: String,
+        enum: ['cash', 'upi', 'bank_transfer', 'other'],
+      },
+      transactionId: String,
+      notes: String,
+    },
+
+    // Payment method (for backward compatibility)
+    paymentMethod: {
+      type: String,
+      enum: ['online', 'offline', 'razorpay', 'cash', 'upi', 'bank_transfer'],
+    },
+    
+    // Order ID for tracking
+    orderId: String,
+    
+    // Transaction details
+    transaction: {
+      id: String,
+      orderId: String,
+      status: String,
+      method: String,
+      amount: Number,
+      currency: String,
+      paidAt: Date,
     },
 
     agreementType: {
