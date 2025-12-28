@@ -86,6 +86,22 @@ interface LeafletRoomsMapViewProps {
   radiusKm?: number;
 }
 
+// Helper to validate coordinates
+const isValidCoordinate = (lat: number | undefined, lng: number | undefined): boolean => {
+  return (
+    typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    !isNaN(lat) &&
+    !isNaN(lng) &&
+    lat !== 0 &&
+    lng !== 0 &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  );
+};
+
 export function LeafletRoomsMapView({
   rooms,
   userLocation,
@@ -95,28 +111,41 @@ export function LeafletRoomsMapView({
 }: LeafletRoomsMapViewProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  
+  // Validate user location
+  const validUserLocation = userLocation && isValidCoordinate(userLocation.lat, userLocation.lng) 
+    ? userLocation 
+    : null;
+  
   const [center, setCenter] = useState<[number, number]>(
-    userLocation ? [userLocation.lat, userLocation.lng] : defaultCenter
+    validUserLocation ? [validUserLocation.lat, validUserLocation.lng] : defaultCenter
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedZoom, setSelectedZoom] = useState(userLocation ? 13 : 11);
+  const [selectedZoom, setSelectedZoom] = useState(validUserLocation ? 13 : 11);
 
   // Filter rooms by radius if user location and showRadius are set
+  // Also filter out rooms with invalid coordinates
   const displayedRooms = useMemo(() => {
-    if (showRadius && userLocation) {
-      return filterRoomsByDistance(rooms, userLocation, radiusKm);
+    // First, filter out rooms with invalid coordinates
+    const validRooms = rooms.filter(room => {
+      const coords = room.location?.coordinates;
+      return coords && isValidCoordinate(coords.lat, coords.lng);
+    });
+    
+    if (showRadius && validUserLocation) {
+      return filterRoomsByDistance(validRooms, validUserLocation, radiusKm);
     }
-    return rooms;
-  }, [rooms, userLocation, showRadius, radiusKm]);
+    return validRooms;
+  }, [rooms, validUserLocation, showRadius, radiusKm]);
 
   useEffect(() => {
     setMounted(true);
 
     // Set center based on rooms or user location
-    if (displayedRooms.length > 0 && !userLocation) {
+    if (displayedRooms.length > 0 && !validUserLocation) {
       const firstRoom = displayedRooms[0];
       if (firstRoom.location?.coordinates) {
         setCenter([
@@ -124,10 +153,10 @@ export function LeafletRoomsMapView({
           firstRoom.location.coordinates.lng,
         ]);
       }
-    } else if (userLocation) {
-      setCenter([userLocation.lat, userLocation.lng]);
+    } else if (validUserLocation) {
+      setCenter([validUserLocation.lat, validUserLocation.lng]);
     }
-  }, [displayedRooms, userLocation]);
+  }, [displayedRooms, validUserLocation]);
 
   // Fetch search suggestions as user types
   const fetchSuggestions = async (query: string) => {
@@ -213,8 +242,8 @@ export function LeafletRoomsMapView({
     setSearchSuggestions([]);
     setShowSuggestions(false);
     // Reset to user location or default
-    if (userLocation) {
-      setCenter([userLocation.lat, userLocation.lng]);
+    if (validUserLocation) {
+      setCenter([validUserLocation.lat, validUserLocation.lng]);
       setSelectedZoom(13);
     } else if (displayedRooms.length > 0) {
       const firstRoom = displayedRooms[0];
@@ -331,12 +360,12 @@ export function LeafletRoomsMapView({
           <MapController center={center} zoom={selectedZoom} />
 
           {/* Auto-fit bounds to show all rooms and user location */}
-          <MapUpdater rooms={displayedRooms} userLocation={userLocation} />
+          <MapUpdater rooms={displayedRooms} userLocation={validUserLocation || undefined} />
 
           {/* User location marker with radius */}
-          {userLocation && (
+          {validUserLocation && (
             <>
-              <Marker position={[userLocation.lat, userLocation.lng]}>
+              <Marker position={[validUserLocation.lat, validUserLocation.lng]}>
                 <Popup>
                   <div className="text-center">
                     <Navigation2 className="w-5 h-5 mx-auto mb-1 text-primary" />
@@ -347,7 +376,7 @@ export function LeafletRoomsMapView({
 
               {showRadius && (
                 <Circle
-                  center={[userLocation.lat, userLocation.lng]}
+                  center={[validUserLocation.lat, validUserLocation.lng]}
                   radius={radiusKm * 1000} // Convert km to meters
                   pathOptions={{
                     color: 'rgb(59, 130, 246)',

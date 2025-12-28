@@ -4,6 +4,22 @@ import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 
+// Helper to validate coordinates
+const isValidCoordinate = (lat: number | undefined, lng: number | undefined): boolean => {
+  return (
+    typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    !isNaN(lat) &&
+    !isNaN(lng) &&
+    lat !== 0 &&
+    lng !== 0 &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  );
+};
+
 interface MapUpdaterProps {
   rooms: Array<{
     location?: {
@@ -28,19 +44,17 @@ export function MapUpdater({ rooms, userLocation }: MapUpdaterProps) {
     const bounds = L.latLngBounds([]);
     let hasPoints = false;
 
-    // Add user location to bounds
-    if (userLocation) {
+    // Add user location to bounds (with validation)
+    if (userLocation && isValidCoordinate(userLocation.lat, userLocation.lng)) {
       bounds.extend([userLocation.lat, userLocation.lng]);
       hasPoints = true;
     }
 
-    // Add all room locations to bounds
+    // Add all room locations to bounds (with validation)
     rooms.forEach((room) => {
-      if (room.location?.coordinates) {
-        bounds.extend([
-          room.location.coordinates.lat,
-          room.location.coordinates.lng,
-        ]);
+      const coords = room.location?.coordinates;
+      if (coords && isValidCoordinate(coords.lat, coords.lng)) {
+        bounds.extend([coords.lat, coords.lng]);
         hasPoints = true;
       }
     });

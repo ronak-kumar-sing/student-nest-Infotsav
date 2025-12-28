@@ -69,12 +69,21 @@ export default function Header() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden lg:flex items-center gap-4">
-            <Link
-              href="/student/login"
-              className="text-[#a1a1aa] hover:text-white transition-colors duration-300 font-medium"
-            >
-              Sign In
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/student/login"
+                className="text-[#a1a1aa] hover:text-white transition-colors duration-300 font-medium px-3 py-2 rounded-lg hover:bg-white/5"
+              >
+                Student Login
+              </Link>
+              <span className="text-[#3a3a3b]">|</span>
+              <Link
+                href="/owner/login"
+                className="text-[#a1a1aa] hover:text-white transition-colors duration-300 font-medium px-3 py-2 rounded-lg hover:bg-white/5"
+              >
+                Owner Login
+              </Link>
+            </div>
             <Link
               href="/student/signup"
               className="px-6 py-2.5 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] text-white font-semibold rounded-xl hover:from-[#6d28d9] hover:to-[#2563eb] transition-all duration-300 shadow-lg hover:shadow-xl"
@@ -119,7 +128,14 @@ export default function Header() {
                   className="block text-[#a1a1aa] hover:text-white transition-colors duration-300 font-medium py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Sign In
+                  Student Login
+                </Link>
+                <Link
+                  href="/owner/login"
+                  className="block text-[#a1a1aa] hover:text-white transition-colors duration-300 font-medium py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Owner Login
                 </Link>
                 <Link
                   href="/student/signup"

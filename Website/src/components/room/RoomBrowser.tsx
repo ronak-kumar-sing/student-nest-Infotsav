@@ -585,12 +585,24 @@ function RoomBrowser() {
               {viewMode === 'map' ? (
                 <div className="space-y-4">
                   <RoomsMapView
-                    rooms={displayedRooms.map(room => ({
+                    rooms={displayedRooms
+                      .filter(room => {
+                        // Filter out rooms with invalid coordinates
+                        const coords = room.location?.coordinates;
+                        return coords && 
+                          typeof coords.lat === 'number' && 
+                          typeof coords.lng === 'number' && 
+                          !isNaN(coords.lat) && 
+                          !isNaN(coords.lng) &&
+                          coords.lat !== 0 && 
+                          coords.lng !== 0;
+                      })
+                      .map(room => ({
                       _id: room.id,
                       title: room.title,
                       price: room.price,
                       location: {
-                        coordinates: room.location?.coordinates || { lat: 0, lng: 0 },
+                        coordinates: room.location.coordinates!,
                         address: room.location?.address || '',
                         city: room.location?.city || '',
                       },

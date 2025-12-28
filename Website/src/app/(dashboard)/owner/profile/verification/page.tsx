@@ -8,49 +8,68 @@ import { Input } from "../../../../../components/ui/input";
 import { Label } from "../../../../../components/ui/label";
 import {
   Shield,
-  Upload,
   CheckCircle,
   FileText,
   Building,
   AlertCircle,
-  Home
+  Home,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function OwnerVerificationPage() {
   const [step, setStep] = useState(1);
   const [verified, setVerified] = useState(false);
-  const [documents, setDocuments] = useState({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [documents, setDocuments] = useState<{
+    aadhaar: File | null;
+    pan: File | null;
+    propertyDocs: File | null;
+    photo: File | null;
+  }>({
     aadhaar: null,
     pan: null,
     propertyDocs: null,
     photo: null
   });
 
-  const handleFileUpload = (type: string, file: File | null) => {
+  const handleFileUpload = (type: keyof typeof documents, file: File | null) => {
     setDocuments(prev => ({
       ...prev,
       [type]: file
     }));
+    
+    // Update step based on what's uploaded
+    if (type === 'aadhaar' && file) setStep(Math.max(step, 2));
+    if (type === 'pan' && file) setStep(Math.max(step, 3));
+    if (type === 'propertyDocs' && file) setStep(Math.max(step, 4));
+    
     const names: Record<string, string> = {
       aadhaar: 'Aadhaar Card',
       pan: 'PAN Card',
       propertyDocs: 'Property Documents',
       photo: 'Profile Photo'
     };
-    toast.success(`${names[type]} uploaded successfully`);
+    if (file) {
+      toast.success(`${names[type]} selected successfully`);
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!documents.aadhaar || !documents.pan || !documents.propertyDocs || !documents.photo) {
       toast.error('Please upload all required documents');
       return;
     }
 
-    // Mock verification
+    setIsSubmitting(true);
+
+    // Simulate upload delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     setVerified(true);
     toast.success('Verification submitted successfully! Your documents will be reviewed within 24-48 hours.');
     setStep(4);
+    setIsSubmitting(false);
   };
 
   return (
@@ -68,17 +87,17 @@ export default function OwnerVerificationPage() {
         </div>
 
         {/* Status Badge */}
-        <Card className="bg-orange-50 border-orange-200">
+        <Card className={verified ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200'}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               {verified ? (
                 <>
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <CheckCircle className="h-6 w-6 text-blue-600" />
                   <div>
-                    <p className="font-semibold text-green-800">Verification Submitted</p>
-                    <p className="text-sm text-green-700">Your documents are under review</p>
+                    <p className="font-semibold text-blue-800">Verification Submitted</p>
+                    <p className="text-sm text-blue-700">Your documents are under review (24-48 hours)</p>
                   </div>
-                  <Badge className="ml-auto" variant="outline">Verified Owner</Badge>
+                  <Badge className="ml-auto" variant="outline">In Review</Badge>
                 </>
               ) : (
                 <>
@@ -246,8 +265,16 @@ export default function OwnerVerificationPage() {
                 onClick={handleSubmit}
                 className="w-full bg-orange-600 hover:bg-orange-700"
                 size="lg"
+                disabled={isSubmitting}
               >
-                Submit for Verification
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Uploading Documents...
+                  </>
+                ) : (
+                  'Submit for Verification'
+                )}
               </Button>
             </CardContent>
           </Card>
